@@ -2,115 +2,59 @@
 import { useState, useEffect } from "react";
 import api from "@/app/api/client";
 
-export default function ShareSettingForm({ parentId, onSuccess }) {
+export default function UserHierarchy({ onUserSelect }) {
   const [users, setUsers] = useState([]);
-  const [selectedId, setSelectedId] = useState("");
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [sharePercent, setSharePercent] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  // Fetch all users once
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const res = await api.get("/users");
-        // ✅ Filter only admin, manager, and agent roles
-        const filtered = res.data.filter((u) =>
-          ["admin", "manager", "agent"].includes(u.role.toLowerCase())
-        );
-        setUsers(filtered);
+        setUsers(res.data);
       } catch (err) {
-        console.error("❌ Error fetching users:", err);
+        console.error("Failed to fetch users:", err);
       }
     };
     fetchUsers();
   }, []);
 
-  // When selecting a user, show only that user
-  useEffect(() => {
-    if (selectedId) {
-      const user = users.find((u) => u.id === Number(selectedId));
-      setSelectedUser(user || null);
-      setSharePercent(user?.share_percent || "");
-    } else {
-      setSelectedUser(null);
-      setSharePercent("");
-    }
-  }, [selectedId, users]);
-
-  // Save the updated share percent
-  const handleSave = async () => {
-    if (!selectedUser) return alert("⚠️ Select a user first");
-    setLoading(true);
-    try {
-      console.log(
-        `🟢 Updating share for user ID ${selectedUser.id} (${selectedUser.role}) to ${sharePercent}%`
-      );
-
-      const res = await api.put(`/users/${selectedUser.id}/share`, {
-        share_percent: sharePercent,
-      });
-
-      console.log("✅ Share update response:", res.data);
-      alert("✅ Share percentage updated successfully");
-
-      // Refresh the page to reflect updated data
-      window.location.reload();
-    } catch (err) {
-      console.error("❌ Error updating share:", err);
-      alert("❌ Failed to update share");
-    } finally {
-      setLoading(false);
-    }
+  // Recursive rendering of children
+  const renderTree = (parentId, level = 0) => {
+    return users
+      .filter((u) => Number(u.parent_id) === Number(parentId))
+      .map((user) => (
+        <div
+          key={user.id}
+          style={{ paddingLeft: `${level * 20}px` }}
+          className="cursor-pointer hover:text-blue-600"
+          onClick={() => onUserSelect?.(user)}
+        >
+          {user.name} ({user.role})
+          {renderTree(user.id, level + 1)}
+        </div>
+      ));
   };
 
+  // Top-level users (admins)
+  const topUsers = users.filter((u) => u.role.toLowerCase() === "admin");
+
   return (
-    <div className="p-4 border rounded-lg shadow-md bg-white">
-      <h2 className="text-xl font-semibold mb-3 text-gray-800">
-        Share Settings
-      </h2>
-
-      {/* Dropdown for selecting user */}
-      <select
-        className="border p-2 w-full mb-3 rounded-md"
-        value={selectedId}
-        onChange={(e) => setSelectedId(e.target.value)}
-      >
-        <option value="">Select Editable User (Admin / Manager / Agent)</option>
-        {users.map((u) => (
-          <option key={u.id} value={u.id}>
-            {u.name} ({u.role})
-          </option>
-        ))}
-      </select>
-
-      {/* Show selected user info */}
-      {selectedUser && (
-        <div className="space-y-3">
-          <div className="flex justify-between items-center bg-gray-50 p-3 rounded-md">
-            <div>
-              <p className="font-medium text-gray-900">{selectedUser.name}</p>
-              <p className="text-sm text-gray-500">
-                Role: {selectedUser.role}
-              </p>
+    <div className="bg-white p-4 rounded shadow">
+      <h2 className="font-semibold mb-2">User Hierarchy</h2>
+      {topUsers.length === 0 ? (
+        <p>No users found</p>
+      ) : (
+        topUsers.map((user) => (
+          <div key={user.id} className="mb-1">
+            <div
+              style={{ paddingLeft: "0px" }}
+              className="cursor-pointer hover:text-blue-600 font-medium"
+              onClick={() => onUserSelect?.(user)}
+            >
+              {user.name} ({user.role})
             </div>
-            <input
-              type="number"
-              className="border p-2 w-24 rounded text-center"
-              value={sharePercent}
-              onChange={(e) => setSharePercent(e.target.value)}
-              placeholder="%"
-            />
+            {renderTree(user.id, 1)}
           </div>
-
-          <button
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
-            onClick={handleSave}
-            disabled={loading}
-          >
-            {loading ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
+        ))
       )}
     </div>
   );

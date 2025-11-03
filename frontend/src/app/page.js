@@ -1,27 +1,25 @@
 "use client";
 
+import { useState } from "react";
 import TransactionForm from "@/components/TransactionForm";
 import BalanceTable from "@/components/BalanceTable";
 import ShareSettingForm from "@/components/ShareSettingsForm";
 import HierarchyView from "@/components/UserHierarchy";
 import TransactionHistory from "@/components/TransactionHistory";
-import { useState } from "react";
 
 export default function Home() {
-  const [selectedParent, setSelectedParent] = useState(null);
-  const [activePage, setActivePage] = useState("dashboard"); // default page
+  const [activeTab, setActiveTab] = useState("dashboard"); // default tab
+  const [refreshKey, setRefreshKey] = useState(0); // for re-render after updates
 
+  // Handle transaction success
   const handleTransactionSuccess = () => {
-    window.location.reload();
+    setRefreshKey((prev) => prev + 1);
   };
 
+  // Handle share updates
   const handleShareUpdate = (msg) => {
     alert(msg);
-    window.location.reload();
-  };
-
-  const handleUserSelect = (user) => {
-    setSelectedParent(user);
+    setRefreshKey((prev) => prev + 1);
   };
 
   return (
@@ -30,72 +28,59 @@ export default function Home() {
         Profit & Loss Distribution System
       </h1>
 
-      {/* Navigation Buttons */}
+      {/* Navigation Tabs */}
       <div className="flex justify-center gap-4 mb-6">
-        <button
-          onClick={() => setActivePage("dashboard")}
-          className={`px-4 py-2 rounded ${
-            activePage === "dashboard" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-        >
-          Dashboard
-        </button>
-        <button
-          onClick={() => setActivePage("shareSettings")}
-          className={`px-4 py-2 rounded ${
-            activePage === "shareSettings" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-        >
-          Share Settings
-        </button>
-        <button
-          onClick={() => setActivePage("transactionHistory")}
-          className={`px-4 py-2 rounded ${
-            activePage === "transactionHistory" ? "bg-blue-500 text-white" : "bg-gray-200"
-          }`}
-        >
-          Transaction History
-        </button>
+        {["dashboard", "shareSettings", "transactionHistory", "userHierarchy"].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2 rounded ${
+              activeTab === tab ? "bg-blue-500 text-white" : "bg-gray-200"
+            }`}
+          >
+            {tab === "dashboard"
+              ? "Dashboard"
+              : tab === "shareSettings"
+              ? "Share Settings"
+              : tab === "transactionHistory"
+              ? "Transaction History"
+              : "User Hierarchy"}
+          </button>
+        ))}
       </div>
 
-      {/* Page Content */}
+      {/* Tab Content */}
       <div className="mt-6">
-        {/* Dashboard: Transaction Form + Balance Table */}
-        {activePage === "dashboard" && (
+        {/* Dashboard */}
+        {activeTab === "dashboard" && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-white p-6 rounded shadow">
-              <TransactionForm onSuccess={handleTransactionSuccess} />
+              <TransactionForm key={refreshKey} onSuccess={handleTransactionSuccess} />
             </div>
             <div className="bg-white p-6 rounded shadow">
-              <BalanceTable />
+              <BalanceTable key={refreshKey} />
             </div>
           </div>
         )}
 
         {/* Share Settings */}
-        {activePage === "shareSettings" && (
-          <div>
-            <HierarchyView onUserSelect={handleUserSelect} />
-            {selectedParent && (
-              <div className="mt-6 bg-white p-6 rounded shadow">
-                <ShareSettingForm
-                  parentId={selectedParent.id}
-                  parentName={selectedParent.name}
-                  parentRole={selectedParent.role}
-                  onSuccess={(msg) => {
-                    handleShareUpdate(msg);
-                    setSelectedParent(null);
-                  }}
-                />
-              </div>
-            )}
+        {activeTab === "shareSettings" && (
+          <div className="bg-white p-6 rounded shadow w-full">
+            <ShareSettingForm key={refreshKey} onSuccess={handleShareUpdate} />
           </div>
         )}
 
         {/* Transaction History */}
-        {activePage === "transactionHistory" && (
+        {activeTab === "transactionHistory" && (
           <div className="bg-white p-6 rounded shadow">
-            <TransactionHistory />
+            <TransactionHistory key={refreshKey} />
+          </div>
+        )}
+
+        {/* User Hierarchy */}
+        {activeTab === "userHierarchy" && (
+          <div className="bg-white p-6 rounded shadow">
+            <HierarchyView key={refreshKey} />
           </div>
         )}
       </div>
