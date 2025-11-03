@@ -1,6 +1,5 @@
 const pool = require('../../db');
 
-// Recursive query to get uplines
 const getUplines = async (clientId) => {
   const query = `
     WITH RECURSIVE chain AS (
@@ -18,14 +17,14 @@ const getUplines = async (clientId) => {
   return result.rows;
 };
 
-// Create a new transaction and distribute profit/loss
+
 const createTransaction = async (req, res) => {
   const client = await pool.connect();
   try {
     const { client_id, stake_amount, profit_loss, result_type } = req.body;
     await client.query('BEGIN');
 
-    // Record the transaction
+    
     const trx = await client.query(
       `INSERT INTO transactions (client_id, stake_amount, profit_loss, result_type, created_at)
        VALUES ($1, $2, $3, $4, NOW()) RETURNING id`,
@@ -33,17 +32,17 @@ const createTransaction = async (req, res) => {
     );
     const transactionId = trx.rows[0].id;
 
-    // Fetch uplines
+   
     const uplines = await getUplines(client_id);
 
     if (result_type === 'profit') {
-      // Client gains stake + profit
+      
       await client.query(
         `UPDATE users SET balance = balance + $1 + $2 WHERE id = $3`,
         [stake_amount, profit_loss, client_id]
       );
 
-      // Uplines lose proportionally
+      
       for (let u of uplines) {
         const deduction = profit_loss * (u.share_percent / 100);
         await client.query(
@@ -57,13 +56,13 @@ const createTransaction = async (req, res) => {
         );
       }
     } else if (result_type === 'loss') {
-      // Client loses stake
+      
       await client.query(
         `UPDATE users SET balance = balance - $1 WHERE id = $2`,
         [stake_amount, client_id]
       );
 
-      // Uplines gain proportionally
+      
       for (let u of uplines) {
         const gain = stake_amount * (u.share_percent / 100);
         await client.query(
@@ -89,7 +88,7 @@ const createTransaction = async (req, res) => {
   }
 };
 
-// Fetch transaction history for a user
+
 const getTransactionsByUser = async (req, res) => {
   try {
     const { id } = req.params;

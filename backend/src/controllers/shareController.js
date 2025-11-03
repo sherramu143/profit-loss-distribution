@@ -1,4 +1,3 @@
-// src/controllers/shareController.js
 const { createUser, getUserById } = require('../services/shareService');
 
 const createUserController = async (req, res) => {

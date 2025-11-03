@@ -1,6 +1,6 @@
 const pool = require('../../db');
 
-// Get all users
+
 const getUsers = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users ORDER BY id');
@@ -10,7 +10,7 @@ const getUsers = async (req, res) => {
   }
 };
 
-// Get user balance
+
 const getUserBalance = async (req, res) => {
   try {
     const { id } = req.params;

@@ -1,14 +1,12 @@
-// db.js
 require('dotenv').config();
 const { Pool } = require('pg');
 
-// Create a Postgres connection pool
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, // Required for Supabase
+  ssl: { rejectUnauthorized: false }, 
 });
 
-// Optional: Test connection when this file is loaded
 pool.connect()
   .then(client => {
     console.log('✅ Database connected successfully!');
