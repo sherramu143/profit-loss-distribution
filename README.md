@@ -114,6 +114,7 @@ Create a `.env` file in the project root:
 
 ```env
 
+document link:https://docs.google.com/document/d/1XMRlffm1uGr6iOrxgYrfNuhkFsueqR3f/edit?usp=drivesdk&ouid=113401580642845930960&rtpof=true&sd=true
 DATABASE\_URL=postgresql://postgres:I69J6bZyfQewWjoh@db.qcabywzrxfmbjhrzzqqj.supabase.co:5432/postgres
 
 PORT=5000
